@@ -53,7 +53,7 @@ const Home: NextPage = () => {
 
     const graphModel = await tf.loadGraphModel('model/model.json')
 
-    const model = await mobilenet.load()
+    // const model = await mobilenet.load()
 
     setgraphModel(graphModel)
     next()
