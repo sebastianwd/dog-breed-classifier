@@ -1,6 +1,8 @@
 import type { NextPage } from 'next'
 import React, { useState, useRef, useReducer } from 'react'
 import * as mobilenet from '@tensorflow-models/mobilenet'
+import * as tf from '@tensorflow/tfjs'
+import { loadGraphModel } from '@tensorflow/tfjs-converter'
 import { noop } from 'lodash'
 
 const states = {
@@ -27,6 +29,8 @@ type ClassificationResults =
       probability: number
     }[]
   | undefined
+
+tf.setBackend('cpu')
 
 const Home: NextPage = () => {
   const [results, setResults] = useState<ClassificationResults>([])
