@@ -40,7 +40,8 @@ input {
 button,
 label,
 ul {
-  width: 300px;
+  width: 600px;
+  max-width: 100%;
   box-sizing: border-box;
   border: solid 1px white;
   background: rgb(22, 22, 22);
@@ -61,7 +62,10 @@ ul {
   margin-bottom: 25px;
 }
 
+li {
+  padding: 20px 10px;  
+}
+
 li:not(:last-child) {
-  padding: 10px;
-  border-bottom: solid 1px;
+ border-bottom: solid 1px;
 }

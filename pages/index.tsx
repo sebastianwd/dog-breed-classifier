@@ -2,8 +2,8 @@ import type { NextPage } from 'next'
 import React, { useState, useRef, useReducer } from 'react'
 import * as mobilenet from '@tensorflow-models/mobilenet'
 import * as tf from '@tensorflow/tfjs'
-import { loadGraphModel } from '@tensorflow/tfjs-converter'
-import { noop } from 'lodash'
+import { noop, upperFirst } from 'lodash'
+import { classnames } from '~/classnames'
 
 const states = {
   initial: { on: { next: 'loadingModel' } },
@@ -36,7 +36,7 @@ const Home: NextPage = () => {
   const [results, setResults] = useState<ClassificationResults>([])
   const [imageURL, setImageURL] = useState<string>()
 
-  const [model, setModel] = useState<mobilenet.MobileNet | null>(null)
+  const [graphModel, setgraphModel] = useState<tf.GraphModel | null>(null)
 
   const imageRef = useRef<HTMLImageElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -50,14 +50,46 @@ const Home: NextPage = () => {
 
   const loadModel = async () => {
     next()
+
+    const graphModel = await tf.loadGraphModel('model/model.json')
+
     const model = await mobilenet.load()
-    setModel(model)
+
+    setgraphModel(graphModel)
     next()
   }
 
   const identify = async () => {
     next()
-    const results = imageRef.current && (await model?.classify(imageRef.current))
+
+    const image = tf.browser.fromPixels(imageRef.current!).resizeNearestNeighbor([180, 180]).toFloat().expandDims(0)
+
+    const predictions = (await tf.tidy(() => graphModel!.predict(image))) as tf.Tensor<tf.Rank>
+
+    const probabilities = tf.softmax(predictions)
+
+    const predictionTypedArray = Array.from(probabilities.dataSync())
+
+    /* 
+    const bestIndex = tf.argMax(predictionTypedArray).dataSync()
+    const bestProbability = tf.max(predictionTypedArray).dataSync()
+
+    console.log('best result: ', classnames[bestIndex], 100 * bestProbability)
+    */
+
+    const results = Array.from(predictionTypedArray)
+      .map(function (p, i) {
+        return {
+          probability: p,
+          className: classnames[i],
+        }
+      })
+      .sort(function (a, b) {
+        return b.probability - a.probability
+      })
+      .slice(0, 5)
+
+    // const results = imageRef.current && (await model?.classify(imageRef.current))
 
     setResults(results || [])
 
@@ -101,7 +133,9 @@ const Home: NextPage = () => {
       {showResults && (
         <ul>
           {results?.map(({ className, probability }) => (
-            <li key={className}>{`${className}: %${(probability * 100).toFixed(2)}`}</li>
+            <li key={className}>{`${upperFirst(
+              className.substring(className.indexOf('-') + 1).replaceAll('_', ' '),
+            )}: ${(probability * 100).toFixed(2)}%`}</li>
           ))}
         </ul>
       )}
