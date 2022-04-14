@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 import type { NextPage } from 'next'
 import React, { useState, useRef, useReducer } from 'react'
-import * as mobilenet from '@tensorflow-models/mobilenet'
+// import * as mobilenet from '@tensorflow-models/mobilenet'
 import * as tf from '@tensorflow/tfjs'
 import { noop, upperFirst } from 'lodash'
 import { classnames } from '~/classnames'
@@ -78,15 +79,13 @@ const Home: NextPage = () => {
     */
 
     const results = Array.from(predictionTypedArray)
-      .map(function (p, i) {
+      .map((p, i) => {
         return {
           probability: p,
           className: classnames[i],
         }
       })
-      .sort(function (a, b) {
-        return b.probability - a.probability
-      })
+      .sort((a, b) => b.probability - a.probability)
       .slice(0, 5)
 
     // const results = imageRef.current && (await model?.classify(imageRef.current))
