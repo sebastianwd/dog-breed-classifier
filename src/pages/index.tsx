@@ -1,10 +1,24 @@
 /* eslint-disable @next/next/no-img-element */
 import type { NextPage } from 'next'
-import React, { useState, useRef, useReducer } from 'react'
+import React, { useState, useRef, useReducer, useEffect } from 'react'
 // import * as mobilenet from '@tensorflow-models/mobilenet'
 import * as tf from '@tensorflow/tfjs'
 import { noop, upperFirst } from 'lodash'
 import { classnames } from '~/classnames'
+import {
+  Box,
+  Button,
+  Container,
+  Heading,
+  Stack,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+} from '@chakra-ui/react'
 
 const states = {
   initial: { on: { next: 'loadingModel' } },
@@ -35,7 +49,7 @@ tf.setBackend('cpu')
 
 const Home: NextPage = () => {
   const [results, setResults] = useState<ClassificationResults>([])
-  const [imageURL, setImageURL] = useState<string>()
+  const [imageURL, setImageURL] = useState<string>('/dog-breed-placeholder.png')
 
   const [graphModel, setgraphModel] = useState<tf.GraphModel | null>(null)
 
@@ -49,16 +63,21 @@ const Home: NextPage = () => {
 
   const next = () => dispatch('next')
 
-  const loadModel = async () => {
-    next()
-
+  const loadModel = React.useCallback(async () => {
     const graphModel = await tf.loadGraphModel('model/model.json')
 
     // const model = await mobilenet.load()
 
     setgraphModel(graphModel)
+
     next()
-  }
+  }, [])
+
+  useEffect(() => {
+    if (appState === 'initial') {
+      loadModel()
+    }
+  }, [appState, loadModel])
 
   const identify = async () => {
     next()
@@ -97,6 +116,13 @@ const Home: NextPage = () => {
 
   const reset = async () => {
     setResults([])
+
+    if (inputRef.current) {
+      inputRef.current.value = ''
+
+      setImageURL('/dog-breed-placeholder.png')
+    }
+
     next()
   }
 
@@ -104,6 +130,8 @@ const Home: NextPage = () => {
 
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = event.target
+
+    console.log('files', files)
 
     if (files && files.length > 0) {
       const url = URL.createObjectURL(files[0])
@@ -115,31 +143,82 @@ const Home: NextPage = () => {
   }
 
   const actionButton = {
-    initial: { action: loadModel, text: 'Load Model' },
-    loadingModel: { action: noop, text: 'Loading Model...' },
-    modelReady: { action: upload, text: 'Upload Image' },
-    imageReady: { action: identify, text: 'Identify Breed' },
-    identifying: { action: noop, text: 'Identifying...' },
-    complete: { action: reset, text: 'Reset' },
+    initial: { action: noop, text: 'Cargando Modelo...' },
+    loadingModel: { action: noop, text: 'Cargando Model...' },
+    modelReady: { action: upload, text: 'Subir Imagen' },
+    imageReady: { action: identify, text: 'Identificar Raza' },
+    identifying: { action: noop, text: 'Identificando...' },
+    complete: { action: reset, text: 'Subir Otra Imagen' },
   }
 
   const { showImage, showResults } = machine.states[appState]
 
   return (
-    <div>
-      {showImage && <img src={imageURL} alt='upload-preview' ref={imageRef} />}
-      <input type='file' accept='image/*' capture='environment' onChange={handleUpload} ref={inputRef} />
-      {showResults && (
-        <ul>
-          {results?.map(({ className, probability }) => (
-            <li key={className}>{`${upperFirst(
-              className.substring(className.indexOf('-') + 1).replaceAll('_', ' '),
-            )}: ${(probability * 100).toFixed(2)}%`}</li>
-          ))}
-        </ul>
-      )}
-      <button onClick={actionButton[appState].action}>{actionButton[appState].text}</button>
-    </div>
+    <Container maxW='md' color='white' py='18' centerContent>
+      <img src={imageURL} alt='upload-preview' ref={imageRef} />
+      <input
+        type='file'
+        accept='image/*'
+        capture='environment'
+        style={{ display: 'none' }}
+        onChange={handleUpload}
+        ref={inputRef}
+      />
+      <Box
+        backgroundColor='gray.700'
+        borderRadius={8}
+        boxShadow='0px 4px 10px rgba(0, 0, 0, 0.05)'
+        py={8}
+        px={8}
+        width='100%'>
+        <Stack justifyContent='center' spacing={8} borderRadius={8}>
+          <Button
+            backgroundColor='gray.900'
+            fontWeight='medium'
+            mt={4}
+            _hover={{ bg: 'gray.800' }}
+            _active={{
+              bg: 'gray.600',
+              transform: 'scale(0.95)',
+            }}
+            isLoading={['identifying', 'loadingModel'].includes(appState)}
+            disabled={['initial'].includes(appState)}
+            onClick={actionButton[appState].action}>
+            {actionButton[appState].text}
+          </Button>
+          {showResults ? (
+            <TableContainer>
+              <Table variant='simple'>
+                <Thead>
+                  <Tr>
+                    <Th>Raza</Th>
+                    <Th isNumeric>Precisión</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {results?.map(({ className, probability }) => (
+                    <Tr key={className}>
+                      <Td>{upperFirst(className.substring(className.indexOf('-') + 1).replaceAll('_', ' '))}</Td>
+                      <Td isNumeric>{(probability * 100).toFixed(2)}%</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <EmptyState />
+          )}
+        </Stack>
+      </Box>
+    </Container>
+  )
+}
+
+const EmptyState = () => {
+  return (
+    <Heading size='md' textAlign='center'>
+      Sube la imagen de tu mascota para ver los resultados.
+    </Heading>
   )
 }
 
