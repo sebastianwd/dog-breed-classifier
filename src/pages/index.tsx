@@ -71,6 +71,8 @@ const Home: NextPage = () => {
     // const model = await mobilenet.load()
 
     setgraphModel(graphModel)
+
+    next()
   }, [])
 
   useEffect(() => {
