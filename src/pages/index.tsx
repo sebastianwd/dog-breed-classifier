@@ -64,13 +64,13 @@ const Home: NextPage = () => {
   const next = () => dispatch('next')
 
   const loadModel = React.useCallback(async () => {
+    next()
+
     const graphModel = await tf.loadGraphModel('model/model.json')
 
     // const model = await mobilenet.load()
 
     setgraphModel(graphModel)
-
-    next()
   }, [])
 
   useEffect(() => {
@@ -131,8 +131,6 @@ const Home: NextPage = () => {
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = event.target
 
-    console.log('files', files)
-
     if (files && files.length > 0) {
       const url = URL.createObjectURL(files[0])
 
@@ -144,7 +142,7 @@ const Home: NextPage = () => {
 
   const actionButton = {
     initial: { action: noop, text: 'Cargando Modelo...' },
-    loadingModel: { action: noop, text: 'Cargando Model...' },
+    loadingModel: { action: noop, text: 'Cargando Modelo...' },
     modelReady: { action: upload, text: 'Subir Imagen' },
     imageReady: { action: identify, text: 'Identificar Raza' },
     identifying: { action: noop, text: 'Identificando...' },
@@ -217,7 +215,7 @@ const Home: NextPage = () => {
 const EmptyState = () => {
   return (
     <Heading size='md' textAlign='center'>
-      Sube la imagen de tu mascota para ver los resultados.
+      Sube la imagen de tu mascota para identificar su raza.
     </Heading>
   )
 }
