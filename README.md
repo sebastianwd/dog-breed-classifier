@@ -1,4 +1,5 @@
 This a dog breed image classifier using a custom model from a custom dataset of images.
+The model is very basic so results may be innacurate
 
 # Notes
 
